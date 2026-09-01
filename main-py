@@ -1,0 +1,64 @@
+import os
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+
+BOT_TOKEN = os.getenv("BOT_TOKEN", "YOUR_TELEGRAM_BOT_TOKEN")
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    name = update.effective_user.first_name or "বন্ধু"
+    text = (
+        f"👋 **স্বাগতম, {name}!**\n\n"
+        "🧪 **OTP Demo Bot**\n"
+        "এটি শুধুমাত্র নিজের অ্যাপ/টেস্ট পরিবেশে OTP workflow পরীক্ষা করার জন্য।\n\n"
+        "নিচের বাটন ব্যবহার করুন:"
+    )
+    keyboard = [
+        [InlineKeyboardButton("🧪 Demo OTP", callback_data="demo_otp")],
+        [InlineKeyboardButton("ℹ️ Help", callback_data="help")],
+    ]
+    await update.message.reply_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="Markdown",
+    )
+
+async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+
+    if query.data == "demo_otp":
+        text = (
+            "🧪 **Demo OTP**\n\n"
+            "🔑 OTP Code: `123456`\n\n"
+            "এটি একটি পরীক্ষামূলক কোড—কোনো Facebook/অন্য তৃতীয়-পক্ষ "
+            "অ্যাকাউন্ট ভেরিফিকেশনের জন্য নয়।"
+        )
+    else:
+        text = (
+            "ℹ️ **Help**\n\n"
+            "এই bot শুধুমাত্র আপনার নিজের test system-এর OTP flow "
+            "পরীক্ষার জন্য ব্যবহার করুন।"
+        )
+
+    keyboard = [[InlineKeyboardButton("🔙 Main Menu", callback_data="menu")]]
+    if query.data == "menu":
+        keyboard = [
+            [InlineKeyboardButton("🧪 Demo OTP", callback_data="demo_otp")],
+            [InlineKeyboardButton("ℹ️ Help", callback_data="help")],
+        ]
+        text = "🏠 **Main Menu**"
+    await query.edit_message_text(
+        text,
+        reply_markup=InlineKeyboardMarkup(keyboard),
+        parse_mode="Markdown",
+    )
+
+if __name__ == "__main__":
+    if not BOT_TOKEN or BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN":
+        raise ValueError("BOT_TOKEN environment variable সেট করুন!")
+
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CallbackQueryHandler(buttons))
+    print("🤖 OTP Demo Bot চালু হচ্ছে...")
+    app.run_polling()
